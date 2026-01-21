@@ -1,0 +1,209 @@
+import React, { useState, useEffect } from 'react';
+import { BookOpen, CheckCircle, Leaf, Award, Trophy, Save, Trash2, Sprout } from 'lucide-react';
+
+// 定義挑戰內容：包含 7 天的題目與引導語
+const CHALLENGE_DAYS = [
+  { id: 1, title: '自我介紹', prompt: '用 200 字以內的篇幅介紹你自己，但不要提到你的職業或學歷。專注於你的個性、愛好或生活哲學。' },
+  { id: 2, title: '難忘的一餐', prompt: '回憶一場讓你印象深刻的用餐經驗。是什麼味道、環境或同伴讓這頓飯變得特別？' },
+  { id: 3, title: '窗外的風景', prompt: '觀察你現在窗外的景色，並用感官（視覺、聽覺、嗅覺）來描述它。即使是平凡的街道也能寫得很有趣。' },
+  { id: 4, title: '如果時光倒流', prompt: '如果你能回到過去的某個時刻，你想對當時的自己說什麼？這會改變你的現在嗎？' },
+  { id: 5, title: '我最喜歡的季節', prompt: '描述你最喜歡的季節。這個季節讓你聯想到什麼樣的情緒或活動？' },
+  { id: 6, title: '一件自豪的小事', prompt: '寫一件別人可能覺得微不足道，但你卻深感自豪的成就。' },
+  { id: 7, title: '給未來的一封信', prompt: '寫一段話給一年後的自己。你希望那時的你達成了什麼？現在的心境是如何？' }
+];
+
+const App = () => {
+  // 狀態管理：目前天數、寫作內容、已完成天數、是否顯示結算視窗
+  const [activeDay, setActiveDay] = useState(1);
+  const [writings, setWritings] = useState({});
+  const [completedDays, setCompletedDays] = useState([]);
+  const [showSummary, setShowSummary] = useState(false);
+
+  // 初始化：從本地儲存 (localStorage) 讀取進度
+  useEffect(() => {
+    const savedWritings = localStorage.getItem('writing-challenge-forest-content');
+    const savedProgress = localStorage.getItem('writing-challenge-forest-progress');
+    if (savedWritings) setWritings(JSON.parse(savedWritings));
+    if (savedProgress) setCompletedDays(JSON.parse(savedProgress));
+  }, []);
+
+  // 儲存功能：將內容寫入 localStorage 並檢查是否完成當日任務
+  const handleSave = () => {
+    localStorage.setItem('writing-challenge-forest-content', JSON.stringify(writings));
+    // 設定門檻：超過 20 個字元即視為完成當日挑戰
+    if (writings[activeDay]?.trim().length > 20 && !completedDays.includes(activeDay)) {
+      const newProgress = [...completedDays, activeDay];
+      setCompletedDays(newProgress);
+      localStorage.setItem('writing-challenge-forest-progress', JSON.stringify(newProgress));
+    }
+  };
+
+  const handleTextChange = (e) => {
+    setWritings({
+      ...writings,
+      [activeDay]: e.target.value
+    });
+  };
+
+  const currentContent = writings[activeDay] || '';
+  const wordCount = currentContent.trim().length;
+  const progressPercentage = (completedDays.length / 7) * 100;
+
+  return (
+    <div className="min-h-screen bg-[#fdfaf5] text-[#4a453e] font-sans p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* 標題欄位 */}
+        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-[#5b6d5b] flex items-center gap-2">
+              <Sprout className="text-[#8e9d7e]" /> 7日森林寫作誌
+            </h1>
+            <p className="text-[#a69d8e]">在寧靜的林間，聽聽內心的聲音。</p>
+          </div>
+          {/* 進度條區塊 */}
+          <div className="bg-[#fffdfa] p-4 rounded-3xl shadow-sm border border-[#eee4d5] flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-[#c4b5a2] uppercase tracking-widest">挑戰進度</p>
+              <p className="text-xl font-bold text-[#8e9d7e]">{completedDays.length} / 7 Days</p>
+            </div>
+            <div className="w-24 h-2 bg-[#f0ede4] rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-[#8e9d7e] transition-all duration-700" 
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* 側邊導覽列 */}
+          <nav className="md:col-span-1 space-y-3">
+            {CHALLENGE_DAYS.map((day) => (
+              <button
+                key={day.id}
+                onClick={() => setActiveDay(day.id)}
+                className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-300 ${
+                  activeDay === day.id
+                    ? 'bg-[#8e9d7e] text-white shadow-lg shadow-[#8e9d7e]/20 translate-x-1'
+                    : 'bg-[#fffdfa] text-[#7a7267] hover:bg-[#f5f0e6] border border-[#eee4d5]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center ${
+                    activeDay === day.id ? 'bg-white/20 text-white' : 'bg-[#f0ede4] text-[#a69d8e]'
+                  }`}>
+                    {day.id}
+                  </span>
+                  <span className="font-medium text-sm">Day {day.id}</span>
+                </div>
+                {completedDays.includes(day.id) && (
+                  <CheckCircle size={16} className={activeDay === day.id ? 'text-white/70' : 'text-[#8e9d7e]'} />
+                )}
+              </button>
+            ))}
+            
+            {/* 完賽獎勵按鈕 */}
+            {completedDays.length === 7 && (
+              <button 
+                onClick={() => setShowSummary(true)}
+                className="w-full mt-6 flex items-center justify-center gap-2 p-4 rounded-2xl bg-[#d4a373] text-white font-bold hover:bg-[#bc8a5f] shadow-lg transition-all"
+              >
+                <Trophy size={18} /> 領取森林勳章
+              </button>
+            )}
+          </nav>
+
+          {/* 主要寫作區域 */}
+          <main className="md:col-span-3 space-y-4">
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-[#eee4d5] relative overflow-hidden">
+              {/* 裝飾性背景葉子 */}
+              <div className="absolute top-0 right-0 p-4 text-[#f0ede4] opacity-20 pointer-events-none">
+                <Leaf size={120} />
+              </div>
+
+              <div className="relative z-10">
+                <div className="inline-block px-4 py-1 bg-[#f5f0e6] text-[#8b7e6a] text-xs font-bold rounded-full mb-4 border border-[#eee4d5]">
+                  第 {activeDay} 天任務：{CHALLENGE_DAYS[activeDay - 1].title}
+                </div>
+                <h2 className="text-2xl font-bold text-[#5b6d5b] mb-6 leading-snug">
+                  {CHALLENGE_DAYS[activeDay - 1].prompt}
+                </h2>
+
+                <div className="relative group">
+                  <textarea
+                    value={currentContent}
+                    onChange={handleTextChange}
+                    placeholder="深呼吸，讓思緒流淌到紙上..."
+                    className="w-full h-80 p-8 bg-[#fdfcfb] border border-[#e8dfd1] rounded-[2rem] focus:ring-2 focus:ring-[#8e9d7e]/30 focus:border-[#8e9d7e] outline-none transition-all resize-none text-[#5c564e] leading-relaxed text-lg italic font-serif"
+                    style={{ backgroundImage: 'linear-gradient(transparent 31px, #f0ede4 32px)', backgroundSize: '100% 32px' }}
+                  />
+                  <div className="absolute bottom-6 right-8 flex items-center gap-2 text-[#a69d8e] text-sm bg-white/60 backdrop-blur px-4 py-1.5 rounded-full border border-[#eee4d5]">
+                    <span>字數：{wordCount}</span>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      // 注意：在正式環境中建議使用自訂 Modal 取代 window.confirm
+                      if (window.confirm('確定要抹去這段記憶（清空內容）嗎？')) {
+                        setWritings({ ...writings, [activeDay]: '' });
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-[#c4b5a2] hover:text-[#bc8a5f] transition-colors text-sm"
+                  >
+                    <Trash2 size={16} /> 清空頁面
+                  </button>
+                  
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center gap-2 bg-[#6b7c5c] hover:bg-[#5b6d5b] text-white px-10 py-4 rounded-2xl font-bold shadow-xl shadow-[#6b7c5c]/20 transition-all active:scale-95"
+                  >
+                    <Save size={18} /> 封存寫作
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 寫作小撇步 */}
+            <div className="bg-[#f0f4f0] rounded-2xl p-5 border border-[#e0e8e0]">
+              <p className="text-[#5b6d5b] text-sm flex items-start gap-3 italic">
+                <BookOpen size={18} className="shrink-0 mt-0.5" />
+                <span>
+                  <strong>林間筆記：</strong> 寫作就像種樹，起初只是微小的種子。別擔心文字是否完美，讓它們在溫暖的陽光下自然生長。
+                </span>
+              </p>
+            </div>
+          </main>
+        </div>
+
+        {/* 完賽成就彈出視窗 */}
+        {showSummary && (
+          <div className="fixed inset-0 bg-[#4a453e]/40 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <div className="bg-[#fffdfa] rounded-[3rem] p-10 max-w-md w-full shadow-2xl text-center border border-[#eee4d5]">
+              <div className="w-24 h-24 bg-[#f5f0e6] text-[#d4a373] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <Award size={56} />
+              </div>
+              <h2 className="text-3xl font-bold text-[#5b6d5b] mb-4">挑戰達成！</h2>
+              <p className="text-[#8b7e6a] mb-8 leading-relaxed">
+                你在這七天裡種下了一片文字森林。<br />
+                這份耐心與堅持，是最好的禮物。
+              </p>
+              <button 
+                onClick={() => setShowSummary(false)}
+                className="w-full bg-[#8e9d7e] hover:bg-[#7a8c6a] text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-[#8e9d7e]/30"
+              >
+                回到森林
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default App;
+};
+
+export default App;
